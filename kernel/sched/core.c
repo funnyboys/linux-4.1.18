@@ -2296,9 +2296,7 @@ asmlinkage __visible void schedule_tail(struct task_struct *prev)
 /*
  * context_switch - switch to the new MM and the new thread's register state.
  */
-static inline struct rq *
-context_switch(struct rq *rq, struct task_struct *prev,
-	       struct task_struct *next)
+static __attribute__((optimize("O0"))) struct rq *context_switch(struct rq *rq, struct task_struct *prev, struct task_struct *next)
 {
 	struct mm_struct *mm, *oldmm;
 
@@ -2313,16 +2311,22 @@ context_switch(struct rq *rq, struct task_struct *prev,
 	 */
 	arch_start_context_switch(prev);
 
-	if (!mm) {
-		next->active_mm = oldmm;
-		atomic_inc(&oldmm->mm_count);
-		enter_lazy_tlb(oldmm, next);
-	} else
+	if (!mm) {                          //mm为空，切换到内核线程
+		next->active_mm = oldmm;        //填充要借用的进程地址空间
+		atomic_inc(&oldmm->mm_count);   //增加引用
+		enter_lazy_tlb(oldmm, next);    //切换到内核线程，不需要刷新tlb
+	} else                              //mm不为空，切换到用户进程，需要切换虚拟地址空间(更新页表基地址寄存器ttbr0_el1)
 		switch_mm(oldmm, mm, next);
 
+    //用户空间已经完成更新，开始更新内核空间
+
+    /* 从内核线程切出 */
+    /* 这里为什么没有减去之前oldmm的mm_count, why???????????
+     * 这个时候还在之前的地址空间，还没有切出，因此还不能减去
+     */
 	if (!prev->mm) {
 		prev->active_mm = NULL;
-		rq->prev_mm = oldmm;
+		rq->prev_mm = oldmm;    //?????????????????
 	}
 	/*
 	 * Since the runqueue lock will be released by the next
@@ -2334,7 +2338,17 @@ context_switch(struct rq *rq, struct task_struct *prev,
 
 	context_tracking_task_switch(prev, next);
 	/* Here we just switch the register state and the stack. */
+
+    /* last = prev = switch_to(prev, next, prev)
+     * A -> B -> C -> A
+     * 此时 prev = A, next = B, last = C
+     * prev, next存储在堆栈中，再次调度回进程A时，堆栈信息也会恢复
+     * last 为函数返回值，是最后一个调用 switch_to() 的结果，即进程C
+     */
 	switch_to(prev, next, prev);
+
+    /* 此时进程已经被调度走，只有该进程再次被调度回来的时候，才会执行这之后的代码 */
+
 	barrier();
 
 	return finish_task_switch(prev);

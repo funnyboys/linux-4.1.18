@@ -598,7 +598,7 @@ ENTRY(cpu_switch_to)
 	ldp	x25, x26, [x8], #16
 	ldp	x27, x28, [x8], #16
 	ldp	x29, x9, [x8], #16
-	ldr	lr, [x8]
+	ldr	lr, [x8]                //lr更新，此时ret已经跳转到新的进程中
 	mov	sp, x9
 	ret
 ENDPROC(cpu_switch_to)
