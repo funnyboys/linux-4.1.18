@@ -1292,7 +1292,7 @@ enum perf_event_task_context {
 
 struct task_struct {
 	volatile long state;	/* -1 unrunnable, 0 runnable, >0 stopped */
-	void *stack;
+	void *stack;            //内核态堆栈
 	atomic_t usage;
 	unsigned int flags;	/* per process flags, defined below */
 	unsigned int ptrace;
@@ -1308,11 +1308,19 @@ struct task_struct {
 #endif
 	int on_rq;
 
+    /*
+     * prio: 动态优先级
+     * static_prio: 静态优先级，可以通过nice系统调用来进行修改
+     * normal_prio: 该值取决于静态优先级和调度策略
+     * rt_priority: 实时优先级
+     */
 	int prio, static_prio, normal_prio;
 	unsigned int rt_priority;
+
+    /* 调度类 */
 	const struct sched_class *sched_class;
-	struct sched_entity se;
-	struct sched_rt_entity rt;
+	struct sched_entity se;     //普通进程的调度实体，每个进程都有其中之一的实体
+	struct sched_rt_entity rt;  //实时进程的调度实体，每个进程都有其中之一的实体
 #ifdef CONFIG_CGROUP_SCHED
 	struct task_group *sched_task_group;
 #endif
@@ -1327,9 +1335,9 @@ struct task_struct {
 	unsigned int btrace_seq;
 #endif
 
-	unsigned int policy;
+	unsigned int policy;        //调度策略(例如SCHED_NORMAL)
 	int nr_cpus_allowed;
-	cpumask_t cpus_allowed;
+	cpumask_t cpus_allowed;     //控制进程可以在哪些处理器上运行
 
 #ifdef CONFIG_PREEMPT_RCU
 	int rcu_read_lock_nesting;
@@ -1356,6 +1364,12 @@ struct task_struct {
 	struct rb_node pushable_dl_tasks;
 #endif
 
+    /*
+     * mm: 用户空间内存描述符，内核线程为NULL
+     * active_mm: 指向进程运行时使用的内存描述符
+     *            用户态进程，mm == active_mm
+     *            内核线程，active_mm指向被借用的用户态进程的内存空间
+     */
 	struct mm_struct *mm, *active_mm;
 #ifdef CONFIG_COMPAT_BRK
 	unsigned brk_randomized:1;
@@ -1368,6 +1382,12 @@ struct task_struct {
 #endif
 /* task state */
 	int exit_state;
+    /*
+     * exit_code:用于设置进程的终止代号，这个值要么是_exit()或exit_group()系统调用参数（正常终止)
+     *           要么是由内核提供的一个错误代号（异常终止）。
+     * exit_signal:被置为-1时表示是某个线程组中的一员。
+     *             只有当线程组的最后一个成员终止时，才会产生一个信号，以通知线程组的领头进程的父进程。
+     */
 	int exit_code, exit_signal;
 	int pdeath_signal;  /*  The signal sent when the parent dies  */
 	unsigned int jobctl;	/* JOBCTL_*, siglock protected */
@@ -1391,8 +1411,8 @@ struct task_struct {
 
 	struct restart_block restart_block;
 
-	pid_t pid;
-	pid_t tgid;
+	pid_t pid;      //process id(unique)
+	pid_t tgid;     //thread group id
 
 #ifdef CONFIG_CC_STACKPROTECTOR
 	/* Canary value for the -fstack-protector gcc feature */
@@ -1421,7 +1441,7 @@ struct task_struct {
 	struct list_head ptrace_entry;
 
 	/* PID/PID hash table linkage. */
-	struct pid_link pids[PIDTYPE_MAX];
+	struct pid_link pids[PIDTYPE_MAX];      //pid link信息
 	struct list_head thread_group;
 	struct list_head thread_node;
 
@@ -1479,7 +1499,7 @@ struct task_struct {
 /* open file information */
 	struct files_struct *files;
 /* namespaces */
-	struct nsproxy *nsproxy;
+	struct nsproxy *nsproxy;        //命名空间
 /* signal handlers */
 	struct signal_struct *signal;
 	struct sighand_struct *sighand;

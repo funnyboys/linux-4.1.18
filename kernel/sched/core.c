@@ -2314,11 +2314,11 @@ static __attribute__((optimize("O0"))) struct rq *context_switch(struct rq *rq, 
 	if (!mm) {                          //mm为空，切换到内核线程
 		next->active_mm = oldmm;        //填充要借用的进程地址空间
 		atomic_inc(&oldmm->mm_count);   //增加引用
-		enter_lazy_tlb(oldmm, next);    //切换到内核线程，不需要刷新tlb
+		enter_lazy_tlb(oldmm, next);    //切换到内核线程，不需要刷新tlb，因为内核线程不访问用户空间
 	} else                              //mm不为空，切换到用户进程，需要切换虚拟地址空间(更新页表基地址寄存器ttbr0_el1)
 		switch_mm(oldmm, mm, next);
 
-    //用户空间已经完成更新，开始更新内核空间
+    //用户栈更新完成，更新内核栈
 
     /* 从内核线程切出 */
     /* 这里为什么没有减去之前oldmm的mm_count, why???????????

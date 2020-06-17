@@ -49,19 +49,25 @@ enum pid_type
 
 struct upid {
 	/* Try to keep pid_chain in the same cacheline as nr for find_vpid */
-	int nr;
-	struct pid_namespace *ns;
-	struct hlist_node pid_chain;
+	int nr;                         //PID具体的值
+	struct pid_namespace *ns;       //指向命名空间的指针
+	struct hlist_node pid_chain;    /* pid哈希列表(pid_hash)中的节点，用于快速通过nr和ns查找到upid
+	                                 * 在alloc_pid 时将该节点添加到哈希列表中
+	                                 */
 };
 
 struct pid
 {
-	atomic_t count;
-	unsigned int level;
+	atomic_t count;                 //该pid被不同task_struct引用的次数(不同的命名空间，可以存在相同的pid)
+	unsigned int level;             //这个pid结构体的深度, root level = 0, root的子空间为1
 	/* lists of tasks that use this pid */
-	struct hlist_head tasks[PIDTYPE_MAX];
+	struct hlist_head tasks[PIDTYPE_MAX];   //指向与该pid相连的task
 	struct rcu_head rcu;
-	struct upid numbers[1];
+	struct upid numbers[1];         /* 变长数组, 存储upid结构, 数组大小为 level+1
+                                     * numbers[0], numbers[1],..., numbers[level]
+                                     * 由于同一个pid从下往上会被映射到多个 namespace 中
+                                     * 这里会保存每一个 namespace 下的 upid 信息
+                                     */
 };
 
 extern struct pid init_struct_pid;

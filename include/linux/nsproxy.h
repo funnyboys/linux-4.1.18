@@ -28,11 +28,11 @@ struct fs_struct;
  */
 struct nsproxy {
 	atomic_t count;
-	struct uts_namespace *uts_ns;
-	struct ipc_namespace *ipc_ns;
-	struct mnt_namespace *mnt_ns;
-	struct pid_namespace *pid_ns_for_children;
-	struct net 	     *net_ns;
+	struct uts_namespace *uts_ns;   //Unix Timesharing System命名空间，运行内核的名称、版本、底层体系结构类型等信息
+	struct ipc_namespace *ipc_ns;   //所有与进程间通信（IPC）有关的信息
+	struct mnt_namespace *mnt_ns;   //文件系统的视图
+	struct pid_namespace *pid_ns_for_children;  //有关进程ID的信息，由struct pid_namespace提供
+	struct net 	     *net_ns;       //包含所有网络相关的命名空间参数
 };
 extern struct nsproxy init_nsproxy;
 

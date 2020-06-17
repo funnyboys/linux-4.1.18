@@ -22,15 +22,18 @@ struct pidmap {
 struct fs_pin;
 
 struct pid_namespace {
-	struct kref kref;
-	struct pidmap pidmap[PIDMAP_ENTRIES];
+	struct kref kref;                       //指向pid_namespace的引用个数
+	struct pidmap pidmap[PIDMAP_ENTRIES];   //分配pid的位图
 	struct rcu_head rcu;
 	int last_pid;
 	unsigned int nr_hashed;
-	struct task_struct *child_reaper;
-	struct kmem_cache *pid_cachep;
-	unsigned int level;
-	struct pid_namespace *parent;
+	struct task_struct *child_reaper;   /*
+                                         *托管进程，如果父进程先于子进程退出，托管进程会对孤儿进程调用wait4
+                                         *每个命名空间都具有的进程，发挥的作用相当于全局的init进程
+                                         */
+	struct kmem_cache *pid_cachep;      //kmem_cache对象，用于加速pid的分配
+	unsigned int level;                 //当前命名空间的级别，父进程 level = n，则子进程 level = n+1
+	struct pid_namespace *parent;       //父命名空间
 #ifdef CONFIG_PROC_FS
 	struct vfsmount *proc_mnt;
 	struct dentry *proc_self;
