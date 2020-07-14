@@ -73,6 +73,10 @@ static inline struct thread_info *current_thread_info(void) __attribute_const__;
 
 static inline struct thread_info *current_thread_info(void)
 {
+	/* 由于thread_union是个union的数据类型, 所以大小固定为THREAD_SIZE
+	 * 由于栈从高地址向地址生长, 而sp指向栈顶, 因此将sp对应低地址按照THREAD_SIZE取0
+	 * 即可得到thread_union的起始地址, 即thread_info的地址
+	 */
 	return (struct thread_info *)
 		(current_stack_pointer & ~(THREAD_SIZE - 1));
 }
