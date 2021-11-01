@@ -1473,8 +1473,10 @@ struct task_struct {
 	struct list_head cpu_timers[3];
 
 /* process credentials */
+	/* (objective)客体凭证 */
 	const struct cred __rcu *real_cred; /* objective and real subjective task
 					 * credentials (COW) */
+	/* (subjective)主体凭证 */
 	const struct cred __rcu *cred;	/* effective (overridable) subjective task
 					 * credentials (COW) */
 	char comm[TASK_COMM_LEN]; /* executable name excluding path
